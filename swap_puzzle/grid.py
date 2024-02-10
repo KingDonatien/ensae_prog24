@@ -274,4 +274,4 @@ class Grid():
         for k in range(len(chemin)-1):
             g1, g2 = chemin[k], chemin[k+1]
             self.swap(find_perm(g1, g2))
-            
+
