@@ -68,19 +68,25 @@ def bfs_epure(src, dst):  # Question 8
         aparcourir=aparcourir[1:]
         cle_s = liste_grilles.index(s.state)
         print(cle_s)
-        "on complète les chemins en récupérant le chemin finissant par s"
+        """
+        on complète les chemins en récupérant le chemin finissant par s
+        """
         for chemin in liste_chemins :
             if chemin[len(chemin)-1]==s:
                 chemin_a_completer=chemin
                 liste_chemins.remove(chemin)
-        "on crée la liste de toutes les grilles voisines de s"
+        """
+        on crée la liste de toutes les grilles voisines de s
+        """
         V_tmp=s.grilles_voisines()
         V=[]
         for i in range(len(V_tmp)):
             v=Grid(2,3)
             v.state=V_tmp[i]
             V.append(v)
-        "on rajoute au graphe les voisins de s qui ne sont pas déjà parcourus ni à parcourir"
+        """
+        on rajoute au graphe les voisins de s qui ne sont pas déjà parcourus ni à parcourir
+        """
         for voisin_possible in V:
             if (voisin_possible not in aparcourir) and (voisin_possible not in parcourus):
                 try:
