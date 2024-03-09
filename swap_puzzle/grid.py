@@ -3,6 +3,7 @@ This is the grid module. It contains the Grid class and its associated methods.
 """
 import numpy as np
 import random
+import heapq as hq
 import copy
 
 import sys 
@@ -81,7 +82,7 @@ class Grid():
         i2, j2 = cell2
         if i1 == i2 and abs(j1-j2) == 1 or j1 == j2 and abs(i1-i2):
             self.state[i1][j1], self.state[i2][j2] = self.state[i2][j2], self.state[i1][j1]
-        else :
+        else:
             raise Exception("Sorry, this swap is not allowed")
 
     def swap_seq(self, cell_pair_list):  # Question 2
@@ -101,7 +102,7 @@ class Grid():
     def grid_from_file(cls, file_name): 
         """
         Creates a grid object from class Grid, initialized with the information from the file file_name.
-        
+    
         Parameters: 
         -----------
         file_name: str
@@ -148,8 +149,8 @@ class Grid():
         for i in range(len(lst)):
             m = lst[i]
             sous_lst = lst[:i] + lst[i+1:]
-            for p in self.permutation(sous_lst):
-                l.append([m] + p)
+        for p in self.permutation(sous_lst):
+            l.append([m] + p)
         return l
 
     def gridlist_from_permlist(self):  # Question 6    
@@ -171,13 +172,10 @@ class Grid():
 
         for s in permlist:
             liste_grilles.append(grid_from_perm(s))
-       
+   
         return liste_grilles
-    
+
     def all_swaps_possible(self):  # Question 6
-        """
-        cette fonction renvoie la liste de toutes les swaps possibles d'une grille donnée
-        """
         list_swaps = []
         m, n = self.m, self.n
         for i in range(m):
@@ -203,7 +201,7 @@ class Grid():
             g_temp.swap(S[k][0], S[k][1])
             L.append(g_temp.state)
         return L
-    
+
     def construct_graph(self):  # Question 7
         """ 
         on considère la liste de toutes les grilles de taille n*m à partir de la fonction qui génère toutes les
@@ -241,7 +239,7 @@ class Grid():
             for v in range(len(traitees)):
                 del (gl[v])
         return gr
-    
+
     def bfs_swap(self):  # Question 7
         """
         cette fonction a pour but de reproduire la séquence de swaps qui permet de passer d'une grille quelconque à la grille triée
@@ -260,7 +258,7 @@ class Grid():
                 if e1 is not None and e2 is not None:
                     break
             return e1, e2
-        
+
         """
         on construit le graphe des grilles et on applique le bfs
         """
@@ -275,57 +273,175 @@ class Grid():
             g1, g2 = chemin[k], chemin[k+1]
             self.swap(find_perm(g1, g2))
 
-
-
-    def bfs_epure(self, dst):  # Question 8
-    """
-    il faut associer une clé unique à chaque grille
-    """
-    src=self
-    liste_grilles=Grid(self.m, self.n).gridlist_from_permlist()
-    cle_src=liste_grilles.index(src.state)
-    g=Graph([cle_src])
-    liste_chemins=[[src]]
-    aparcourir=[src]
-    parcourus=[src]
-    while aparcourir!=[]:
-        s=aparcourir[0]
-        aparcourir=aparcourir[1:]
-        cle_s = liste_grilles.index(s.state)
-        print(cle_s)
+    def final_bfs(self, dst):  # Question 8
         """
-        on complète les chemins en récupérant le chemin finissant par s
+        il faut associer une clé unique à chaque grille
         """
-        for chemin in liste_chemins :
-            if chemin[len(chemin)-1]==s:
-                chemin_a_completer=chemin
-                liste_chemins.remove(chemin)
-        """
-        on crée la liste de toutes les grilles voisines de s
-        """
-        V_tmp=s.grilles_voisines()
-        V=[]
-        for i in range(len(V_tmp)):
-            v=Grid(self.m, self.n)
-            v.state=V_tmp[i]
-            V.append(v)
-        """
-        on rajoute au graphe les voisins de s qui ne sont pas déjà parcourus ni à parcourir
-        """
-        for voisin_possible in V:
-            if (voisin_possible not in aparcourir) and (voisin_possible not in parcourus):
-                try:
-                    g.graph[cle_s].append(voisin_possible)
-                except KeyError:
-                    g.graph[cle_s]=[voisin_possible]
-                liste_chemins.append(chemin_a_completer+[voisin_possible])
-                aparcourir.append(voisin_possible)
-                parcourus.append(voisin_possible)
-            if voisin_possible==dst:
-                return (len(chemin_a_completer), chemin_a_completer+[voisin_possible])
-    return None
+        src = self
+        liste_grilles = Grid(self.m, self.n).gridlist_from_permlist()
+        cle_src = liste_grilles.index(src.state)
+        g = Graph([cle_src])
+        liste_chemins = [[src]]
+        aparcourir = [src]
+        parcourus = [src]
+        while aparcourir != []:
+            s = aparcourir[0]
+            aparcourir.remove(0)
+            cle_s = liste_grilles.index(s.state)
+            print(cle_s)
+            """
+            on complète les chemins en récupérant le chemin finissant par s
+            """
+            for chemin in liste_chemins:
+                if chemin[len(chemin)-1] == s:
+                    chemin_a_completer = chemin
+                    liste_chemins.remove(chemin)
+            """
+            on crée la liste de toutes les grilles voisines de s
+            """
+            V_tmp = s.grilles_voisines()
+            V = []
+            for i in range(len(V_tmp)):
+                v = Grid(self.m, self.n)
+                v.state = V_tmp[i]
+                V.append(v)
+            """
+            on rajoute au graphe les voisins de s qui ne sont pas déjà parcourus ni à parcourir
+            """
+            for voisin_possible in V:
+                if (voisin_possible not in aparcourir) and (voisin_possible not in parcourus):
+                    try:
+                        g.graph[cle_s].append(voisin_possible)
+                    except KeyError:
+                        g.graph[cle_s] = [voisin_possible]
+                    liste_chemins.append(chemin_a_completer+[voisin_possible])
+                    aparcourir.append(voisin_possible)
+                    parcourus.append(voisin_possible)
+                if voisin_possible == dst:
+                    return (len(chemin_a_completer), chemin_a_completer+[voisin_possible])
+        return None
     
-    """
-    Il s'avère que cette dernière fonction ne fonctionne pas. Nous avons tenté de la réécrire de plusieurs manières différentes,
-    mais aucun test n'a été concluant. Impossible de voir où se trouve l'erreur, nous sommes persuadés que la fonction devrait marcher.
-    """ 
+    def astar(self, dst):  # Question 1 ; Séances 3 et 4
+
+        '''
+        Comme la fonction heuristique est utilisée comme une key function pour ordonner 
+        la file, sa présence dans la fonction astar, bien que peu élégante, est nécessaire.
+        L'heuristique choisie donne la somme des distances de Manhattan (norme 1) 
+        pour chaque élément de la grille entre leur représentation dans R2 par 
+        les coordonnées (i,j) correspondant à la ligne i et colonne j où se trouve 
+        l'élément, et l'emplacement (itarget, jtarget) où il serait si la grille était
+        triée
+        '''
+        m=self.m
+        n=self.n
+        def heuristique(grille,m,n): 
+            s = 0
+            for i in range(m):
+                for j in range(n):
+                    k = grille[i][j]
+                    itarget = k // n - 1
+                    jtarget = k%n
+                    s += abs(i - itarget) + abs(j - jtarget)
+                    return s
+
+        traites = []
+        liste_chemins = [[self]]
+        openList = self.gridlist_from_permlist()
+        hq.merge(openList,key=heuristique)
+        hq.heappush(openList,self.state)
+        while openList != [] :
+            u = hq.heappop(openList)
+            for chemin in liste_chemins:
+                if chemin[len(chemin)-1].state == u:
+                    chemin_a_completer = chemin
+                    liste_chemins.remove(chemin)
+                    if u == dst.state:  
+                        return chemin_a_completer
+            
+            """
+            on introduit la liste de toutes les grilles voisines de s
+            """
+            grid_u=Grid(m,n,u)
+            liste_voisins = grid_u.grilles_voisines()
+            for v in liste_voisins:
+                grid_v=Grid(m,n,v)
+                if not (v in traites or (v in openList and heuristique(v,m,n) < heuristique(u,m,n) + 1)):
+                    hq.heappush(openList,v)
+                    liste_chemins.append(chemin_a_completer + [grid_v])
+            traites.append(u)
+        raise Exception("Error")
+
+    '''
+    Question 2 : voici quelques exemples d'heuristiques possibles dans notre
+    cadre d'étude
+    '''
+
+    '''
+    Voici une première alternative à l'heuristique utilisée dans astar.
+    Comme les grilles sont des permutations sur {1, ..., mn}, la distance de 
+    Kendall-Tau, dKT, qui donne  le nombre de paires d’éléments qui sont en désaccord 
+    par rapport à leur ordre. En particulier, dans notre cas, on compare une grille 
+    avec l'identité, donc on va simplement calculer le nombre d'inversion d'une permutation.
+    si g est une grille et Id est l'identité, le nombre d'inversion de g est dKT(g, Id).
+    
+    En pratique, la distance de Kendall Tau est équivalente au nombre de swaps effectués 
+    par le Tri à Bulle. Elle prend ainsi ses valeurs entre 0 et mn
+
+    L'intérêt de cette heuristique est qu'elle est par nature fondée sur le problème 
+    de recherche d'un nombre de swaps optimal entre deux grilles, puisqu'elle mesure justement
+    cette valeur.
+
+    L'implémentation naive est en O((mn)^2). Cependant, comme on compare toujours une grille avec 
+    l'identité, l'utilisation du tri fusion permet, en comptant le nombre de "sauts" des éléments 
+    de la 2e liste lors de la fusion, d'obtenir un temps de calcul en O((mnlog(mn))).
+    '''
+
+    def kendall_tau_naif(self):  # Question 2 ; Séances 3 et 4
+        s = 0
+        n, m = self.m, self.n
+        for a in range(m*n):
+            for b in range(m*n):
+                if a < b and self.state[a//n - 1][a%n] > self.state[b//n - 1][b%n]:
+                    s += 1
+        return s
+    
+    '''
+    Pour la question 4 et la création de niveaux de difficulté, le fait
+    d'utiliser la distance de Kendall-Tau comme heuristique simplifie 
+    grandement le choix de grille à effectuer : on aura qu'à, à partir
+    de l'identité, réaliser un certain nombre d'inversions pour choisir
+    la difficulté. On remplace donc l'heuristique du code de astar 
+    (distance de Manhattan) par celle de Kendall-Tau. On suppose donc
+    que ce changement a été effectué (ce qui revient à remplacer les
+    lignes 336 à 343 par les lignes 395 à 401).
+
+    On choisit 4 niveaux de difficultés. Soit g une grille.
+    En notant dmax = mn (qui est la valeur maximale pour dKT(g, Id) 
+    comme on l'a vu précédemment), on a :
+    - La difficulté du jeu est EASY:= 1 ssi         1 <= dKT(g, ID) <= dmax//4
+    - La difficulté du jeu est INTERMEDIATE:= 2 ssi dmax//4 < dKT(g, ID) <= dmax//2
+    - La difficulté du jeu est DIFFICULT := 3 ssi   dmax//2 < dKT(g, ID) <= 3dmax//4
+    - La difficulté du jeu est HARDCORE := 4 ssi    3dmax//4 < dKT(g, ID) <= dmax
+    '''
+
+    def level_starter(self, difficulty):  # Question 4 ; Séances 3 et 4
+        n, m = self.m, self.n
+        dmax = m*n
+        if difficulty == 1:
+            k = random.randint(1, dmax//4)
+        elif difficulty == 2:
+            k = random.randint(dmax//4 + 1, dmax//2)
+        elif difficulty == 3:
+            k = random.randint(dmax//2 + 1, 3*dmax//4)
+        elif difficulty == 4:
+            k = random.randint(3*dmax//4 + 1, dmax)
+
+        inversions = random.sample([a for a in range(m*n)], k)
+        starter = Grid(m, n)
+
+        for a in range(k-1):
+            i1, i2 = inversions[a]//n, inversions[a+1]//n
+            j1, j2 = a%n, (a+1)%n
+            starter.state[i1][j1], starter.state[i2][j2] = starter.state[i2][j2], starter.state[i1][j1]
+
+        return starter
